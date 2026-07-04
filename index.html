@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malang WFC Hub | Database Tempat Kerja & Nugas Terenak (Update Juli 2026)</title>
+    <meta name="description" content="Temukan cafe terbaik untuk bekerja (Work From Cafe) dan nugas di Kota Malang. Dilengkapi info kecepatan WiFi, ketersediaan colokan, tingkat kebisingan, dan peta interaktif.">
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js CSS (Interactive Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i data-lucide="coffee"></i>
+                </div>
+                <div>
+                    <h1>Malang WFC Hub</h1>
+                    <p class="subtitle">Edisi Update Juli 2026</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="btn-theme" class="btn-icon-toggle" aria-label="Toggle Theme">
+                    <i data-lucide="sun" class="sun-icon"></i>
+                    <i data-lucide="moon" class="moon-icon"></i>
+                </button>
+                <button id="btn-add-cafe" class="btn-primary">
+                    <i data-lucide="plus-circle"></i>
+                    <span>Tambah Cafe</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Dashboard Statistics Section -->
+    <section class="hero-stats">
+        <div class="hero-bg-overlay"></div>
+        <div class="hero-content">
+            <h2>Nugas & Kerja Lebih Produktif di Kota Malang</h2>
+            <p>Database curated tempat nongkrong nyaman dengan koneksi kencang, banyak colokan, dan kopi enak.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i data-lucide="map-pin"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-num" id="stat-total">8</span>
+                        <span class="stat-label">Total Cafe Terdaftar</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon cyan"><i data-lucide="wifi"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-num" id="stat-wifi">55 Mbps</span>
+                        <span class="stat-label">Rata-rata Kecepatan WiFi</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon emerald"><i data-lucide="clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-num" id="stat-24h">3</span>
+                        <span class="stat-label">Buka 24/7 / Larut Malam</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon rose"><i data-lucide="heart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-num" id="stat-fav">0</span>
+                        <span class="stat-label">Cafe Difavoritkan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace Container -->
+    <main class="app-layout">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar-filters">
+            <div class="filter-header">
+                <h3><i data-lucide="sliders-horizontal"></i> Filter Pencarian</h3>
+                <button id="btn-clear-filters" class="btn-text-only">Reset</button>
+            </div>
+            
+            <div class="filter-group">
+                <label for="search-input">Cari Cafe / Lokasi</label>
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Nama cafe, jalan, area...">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Kecamatan / Area</label>
+                <select id="filter-area">
+                    <option value="">Semua Wilayah</option>
+                    <option value="Klojen">Klojen (Pusat Kota)</option>
+                    <option value="Lowokwaru">Lowokwaru (Sekitar Kampus)</option>
+                    <option value="Blimbing">Blimbing</option>
+                    <option value="Sukun">Sukun</option>
+                    <option value="Batu">Batu & Sekitarnya</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Tipe Tempat</label>
+                <select id="filter-type">
+                    <option value="">Semua Tipe</option>
+                    <option value="Cafe">Cafe / Workspace</option>
+                    <option value="Convenience Store">Convenience Store (FamilyMart, Lawson, dll)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Kecepatan WiFi Minimum</label>
+                <div class="slider-container">
+                    <input type="range" id="filter-wifi" min="10" max="100" value="10" class="slider">
+                    <div class="slider-labels">
+                        <span>10 Mbps</span>
+                        <span id="wifi-val">Semua</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Colokan Listrik (Stopkontak)</label>
+                <div class="pill-selectors" id="filter-outlets">
+                    <button class="pill-btn active" data-val="all">Semua</button>
+                    <button class="pill-btn" data-val="Banyak">Banyak (Hampir Tiap Meja)</button>
+                    <button class="pill-btn" data-val="Cukup">Cukup</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Tingkat Kebisingan</label>
+                <div class="pill-selectors" id="filter-noise">
+                    <button class="pill-btn active" data-val="all">Semua</button>
+                    <button class="pill-btn" data-val="Tenang">Tenang (Sunyi)</button>
+                    <button class="pill-btn" data-val="Sedang">Sedang (Cozy)</button>
+                    <button class="pill-btn" data-val="Ramai">Ramai (Aktif)</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Fasilitas Tambahan</label>
+                <div class="checkbox-list">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="facility-24h" value="24h">
+                        <span>Buka 24 Jam / Larut Malam</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="facility-ac" value="ac">
+                        <span>Full AC (Indoor Cozy)</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="facility-outdoor" value="outdoor">
+                        <span>Area Outdoor / Asri</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="facility-prayer" value="prayer">
+                        <span>Mushola</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="facility-meals" value="meals">
+                        <span>Makanan Berat Tersedia</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="checkbox-item fav-only-toggle">
+                    <input type="checkbox" id="filter-favorites">
+                    <span class="fav-text"><i data-lucide="heart" class="heart-inline"></i> Hanya Tampilkan Favorit</span>
+                </label>
+            </div>
+        </aside>
+
+        <!-- Main Display Content (List and Map Toggle/View) -->
+        <section class="main-content">
+            <!-- View Mode Switcher -->
+            <div class="content-toolbar">
+                <div class="results-count">
+                    Menampilkan <span id="results-num" class="bold">0</span> tempat WFC di Malang
+                </div>
+                <div class="view-toggles">
+                    <button id="btn-view-list" class="toggle-btn active" aria-label="Tampilan List">
+                        <i data-lucide="layout-grid"></i> List Card
+                    </button>
+                    <button id="btn-view-map" class="toggle-btn" aria-label="Tampilan Peta">
+                        <i data-lucide="map"></i> Peta Interaktif
+                    </button>
+                </div>
+            </div>
+
+            <!-- Double-pane View: Grid List + Sticky Map -->
+            <div class="view-panes">
+                <!-- Cafe Cards Grid -->
+                <div id="cafe-list" class="cafe-grid">
+                    <!-- Cards injected via JS -->
+                </div>
+
+                <!-- Leaflet Sticky Map Container -->
+                <div class="map-pane-wrapper">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Detail Cafe -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content glassmorphism modal-large">
+            <button class="btn-close-modal" aria-label="Tutup"><i data-lucide="x"></i></button>
+            <div class="modal-body" id="detail-modal-body">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah Cafe Baru -->
+    <div id="add-modal" class="modal">
+        <div class="modal-content glassmorphism">
+            <button class="btn-close-modal" aria-label="Tutup"><i data-lucide="x"></i></button>
+            <div class="modal-header">
+                <h3><i data-lucide="plus-circle" class="cyan"></i> Rekomendasikan Cafe WFC</h3>
+                <p>Bantu anak WFC Malang menemukan tempat baru dengan menambahkan info akurat!</p>
+            </div>
+            <form id="add-cafe-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-name">Nama Tempat *</label>
+                        <input type="text" id="new-name" required placeholder="Contoh: FamilyMart Suhat">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-type">Tipe Tempat *</label>
+                        <select id="new-type" required>
+                            <option value="Cafe">Cafe / Workspace</option>
+                            <option value="Convenience Store">Convenience Store (FamilyMart/Lawson/dll)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-area">Kecamatan/Area *</label>
+                        <select id="new-area" required>
+                            <option value="">Pilih Area...</option>
+                            <option value="Klojen">Klojen</option>
+                            <option value="Lowokwaru">Lowokwaru</option>
+                            <option value="Blimbing">Blimbing</option>
+                            <option value="Sukun">Sukun</option>
+                            <option value="Batu">Batu & Sekitarnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-address">Alamat Lengkap *</label>
+                        <input type="text" id="new-address" required placeholder="Contoh: Jl. Soekarno Hatta No.34, Lowokwaru">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-hours">Jam Buka *</label>
+                        <input type="text" id="new-hours" required placeholder="Contoh: 09:00 - 22:00 atau 24 Jam">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-wifi">Kecepatan WiFi (Est. Mbps) *</label>
+                        <input type="number" id="new-wifi" required min="5" max="500" placeholder="Contoh: 50">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-outlets">Colokan Listrik *</label>
+                        <select id="new-outlets" required>
+                            <option value="Banyak">Banyak (Hampir Tiap Meja)</option>
+                            <option value="Cukup">Cukup (Sebagian Besar Meja)</option>
+                            <option value="Sedikit">Sedikit (Hanya Pojokan)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-noise">Tingkat Kebisingan *</label>
+                        <select id="new-noise" required>
+                            <option value="Tenang">Tenang (Sunyi, Workspace-Vibe)</option>
+                            <option value="Sedang">Sedang (Cozy Chatter, Musik Sayup)</option>
+                            <option value="Ramai">Ramai (Musik Kencang, Rapat Aktif)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-lat">Latitude (Opsional)</label>
+                        <input type="number" id="new-lat" step="any" placeholder="-7.9442">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-lng">Longitude (Opsional)</label>
+                        <input type="number" id="new-lng" step="any" placeholder="112.6215">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fasilitas Tersedia</label>
+                    <div class="checkbox-grid-form">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="new-fac-24h"><span>Buka 24 Jam</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="new-fac-ac"><span>Full AC (Indoor)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="new-fac-outdoor"><span>Area Outdoor</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="new-fac-prayer"><span>Mushola</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="new-fac-meals"><span>Makanan Berat</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="new-img">Link Gambar/Foto Cafe (Opsional)</label>
+                    <input type="url" id="new-img" placeholder="https://example.com/foto.jpg">
+                </div>
+
+                <div class="form-group">
+                    <label for="new-description">Review Singkat & Menu Recomended *</label>
+                    <textarea id="new-description" required rows="3" placeholder="Sebutkan hal menarik tentang cafe ini..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full-width">Kirim & Simpan ke Database</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 Malang WFC Hub. Dibuat dengan antusiasme tinggi untuk komunitas freelancer, mahasiswa, dan remote workers di Malang.</p>
+            <div class="footer-links">
+                <span>Update Terakhir: Juli 2026</span>
+                <span class="divider">|</span>
+                <span>Data dikurasi secara lokal</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- App Main JS -->
+    <script src="app.js"></script>
+</body>
+</html>
